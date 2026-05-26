@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from auth import get_current_user
 from database import get_db
 from models import CallCampaign, CallLog, ClassGroup, Parent, User
-from schemas import CampaignCreate, CampaignOut
+from schemas import CampaignCreate, CampaignOut, QuickCallCreate
 
 router = APIRouter(tags=["campaigns"])
 
@@ -138,3 +138,68 @@ async def stop_campaign(
     group_result = await db.execute(select(ClassGroup).where(ClassGroup.id == campaign.class_group_id))
     group = group_result.scalar_one_or_none()
     return _campaign_out(campaign, group.name if group else None)
+
+
+@router.post("/campaigns/quick", response_model=CampaignOut, status_code=status.HTTP_201_CREATED)
+async def quick_call(
+    body: QuickCallCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Single number quick call — no group needed."""
+    QUICK_GROUP_NAME = "__quick_calls__"
+
+    group_result = await db.execute(
+        select(ClassGroup).where(ClassGroup.name == QUICK_GROUP_NAME)
+    )
+    group = group_result.scalar_one_or_none()
+    if not group:
+        group = ClassGroup(
+            name=QUICK_GROUP_NAME,
+            school_name="Seth M R Jaipuria School Bhiwadi",
+        )
+        db.add(group)
+        await db.flush()
+
+    parent_result = await db.execute(
+        select(Parent).where(
+            Parent.class_group_id == group.id,
+            Parent.phone_number == body.phone_number,
+        )
+    )
+    parent = parent_result.scalar_one_or_none()
+    if not parent:
+        parent = Parent(
+            class_group_id=group.id,
+            child_name=body.child_name,
+            parent_name=body.parent_name,
+            phone_number=body.phone_number,
+        )
+        db.add(parent)
+        await db.flush()
+    else:
+        parent.child_name = body.child_name
+        parent.parent_name = body.parent_name
+        parent.is_active = True
+
+    campaign = CallCampaign(
+        class_group_id=group.id,
+        created_by=current_user.id,
+        message_text=body.message_text,
+        language=body.language,
+        total_parents=1,
+    )
+    db.add(campaign)
+    await db.commit()
+    await db.refresh(campaign)
+
+    from config import settings
+    if settings.local_mode:
+        import asyncio
+        from local_runner import run_campaign_local
+        asyncio.create_task(run_campaign_local(campaign.id))
+    else:
+        from tasks.calling_tasks import run_campaign
+        run_campaign.apply_async(args=[campaign.id])
+
+    return _campaign_out(campaign, "Quick Call")

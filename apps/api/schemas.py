@@ -109,6 +109,29 @@ class CampaignCreate(BaseModel):
         return v
 
 
+class QuickCallCreate(BaseModel):
+    phone_number: str
+    parent_name: str
+    child_name: str
+    message_text: str
+    language: str = "hindi"
+
+    @field_validator("phone_number")
+    @classmethod
+    def validate_phone(cls, v: str) -> str:
+        pattern = r"^\+91[6-9]\d{9}$"
+        if not re.match(pattern, v):
+            raise ValueError("Phone must be E.164 format: +91XXXXXXXXXX")
+        return v
+
+    @field_validator("language")
+    @classmethod
+    def validate_language(cls, v: str) -> str:
+        if v not in ("hindi", "english"):
+            raise ValueError("language must be 'hindi' or 'english'")
+        return v
+
+
 class CampaignOut(BaseModel):
     id: str
     class_group_id: str
