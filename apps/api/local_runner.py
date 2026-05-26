@@ -65,10 +65,19 @@ async def run_campaign_local(campaign_id: str) -> None:
 
 
 async def _process_one(call_log_id: str) -> None:
-    from services.mock_caller import simulate_call
+    provider = settings.call_provider  # "mock" | "twilio" | "exotel"
+
     try:
         async with AsyncSessionLocal() as db:
-            await simulate_call(call_log_id, db)
+            if provider == "exotel":
+                from services.exotel_caller import initiate_call
+                await initiate_call(call_log_id, db)
+            elif provider == "twilio":
+                from services.twilio_caller import initiate_call
+                await initiate_call(call_log_id, db)
+            else:
+                from services.mock_caller import simulate_call
+                await simulate_call(call_log_id, db)
     except Exception as e:
         logger.exception("Call failed for %s: %s", call_log_id, e)
         async with AsyncSessionLocal() as db:

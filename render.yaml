@@ -13,7 +13,9 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: LOCAL_MODE
-        value: true
+        value: false
+      - key: CALL_PROVIDER
+        value: mock    # change to: exotel or twilio once creds are set
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
@@ -29,6 +31,14 @@ services:
       - key: TWILIO_PHONE_NUMBER
         sync: false
       - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: EXOTEL_ACCOUNT_SID
+        sync: false
+      - key: EXOTEL_API_KEY
+        sync: false
+      - key: EXOTEL_API_TOKEN
+        sync: false
+      - key: EXOTEL_PHONE_NUMBER
         sync: false
       - key: SCHOOL_NAME
         value: Seth M R Jaipuria School Bhiwadi

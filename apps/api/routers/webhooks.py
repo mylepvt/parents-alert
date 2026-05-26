@@ -11,6 +11,7 @@ from config import settings
 from database import get_db
 from models import CallLog
 from services.twilio_caller import handle_status_callback
+from services.exotel_caller import handle_exotel_status_callback
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 logger = logging.getLogger(__name__)
@@ -109,4 +110,25 @@ async def status_callback(
         db=db,
     )
 
+    return Response(status_code=204)
+
+
+@router.post("/exotel-status/{call_log_id}")
+async def exotel_status_callback(
+    call_log_id: str,
+    Status: str = Form(default=""),
+    Duration: str = Form(default="0"),
+    CallSid: str = Form(default=""),
+    db: AsyncSession = Depends(get_db),
+):
+    logger.info(
+        "Exotel status: call_log=%s status=%s duration=%s sid=%s",
+        call_log_id, Status, Duration, CallSid,
+    )
+    await handle_exotel_status_callback(
+        call_log_id=call_log_id,
+        call_status=Status,
+        call_duration=Duration,
+        db=db,
+    )
     return Response(status_code=204)

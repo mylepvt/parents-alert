@@ -87,14 +87,9 @@ async def create_campaign(
     await db.commit()
     await db.refresh(campaign)
 
-    from config import settings
-    if settings.local_mode:
-        import asyncio
-        from local_runner import run_campaign_local
-        asyncio.create_task(run_campaign_local(campaign.id))
-    else:
-        from tasks.calling_tasks import run_campaign
-        run_campaign.apply_async(args=[campaign.id])
+    import asyncio
+    from local_runner import run_campaign_local
+    asyncio.create_task(run_campaign_local(campaign.id))
 
     return _campaign_out(campaign, group.name)
 
@@ -193,13 +188,8 @@ async def quick_call(
     await db.commit()
     await db.refresh(campaign)
 
-    from config import settings
-    if settings.local_mode:
-        import asyncio
-        from local_runner import run_campaign_local
-        asyncio.create_task(run_campaign_local(campaign.id))
-    else:
-        from tasks.calling_tasks import run_campaign
-        run_campaign.apply_async(args=[campaign.id])
+    import asyncio
+    from local_runner import run_campaign_local
+    asyncio.create_task(run_campaign_local(campaign.id))
 
     return _campaign_out(campaign, "Quick Call")

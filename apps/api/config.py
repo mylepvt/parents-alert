@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     retry_delay_seconds: int = 30
     call_timeout_seconds: int = 30
 
+    # call_provider: "mock" | "twilio" | "exotel"
+    call_provider: str = "mock"
+
+    # Exotel (Indian telephony)
+    exotel_account_sid: str = ""
+    exotel_api_key: str = ""
+    exotel_api_token: str = ""
+    exotel_phone_number: str = ""  # ExoPhone e.g. 09XXXXXXXXX
+
     local_mode: bool = False  # True = no Twilio, no Redis, no Anthropic needed
 
     algorithm: str = "HS256"
