@@ -9,12 +9,19 @@ import type { ClassGroup, Campaign } from "@/types";
 import { formatRelativeTime, getGreeting } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, Radio, Users, CheckCircle, TrendingUp } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Radio, Users, TrendingUp, Trash2 } from "lucide-react";
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
+  const qc = useQueryClient();
   const { data: campaigns, isLoading: campaignsLoading } = useCampaigns();
+
+  const deleteCampaign = useMutation({
+    mutationFn: (id: string) => api.delete(`/campaigns/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
+  });
   const { data: groups } = useQuery<ClassGroup[]>({
     queryKey: ["groups"],
     queryFn: async () => (await api.get("/groups")).data,
@@ -78,36 +85,47 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2">
               {campaigns.slice(0, 10).map((c: Campaign) => (
-                <button
+                <div
                   key={c.id}
-                  onClick={() =>
-                    router.push(
-                      c.status === "running" || c.status === "pending"
-                        ? `/live/${c.id}`
-                        : `/report/${c.id}`
-                    )
-                  }
-                  className="w-full text-left bg-[#18181B] rounded-xl border border-[#27272A] p-4 hover:border-[#52525B] transition-colors"
+                  className="bg-[#18181B] rounded-xl border border-[#27272A] p-4 hover:border-[#52525B] transition-colors"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#F4F4F5] truncate">{c.group_name}</p>
-                      <p className="text-xs text-[#A1A1AA] mt-0.5 truncate">{c.message_text}</p>
-                    </div>
-                    <span
-                      className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${CAMPAIGN_STATUS_COLORS[c.status]}`}
+                  <div className="flex items-start gap-2">
+                    <button
+                      className="flex-1 text-left"
+                      onClick={() =>
+                        router.push(
+                          c.status === "running" || c.status === "pending"
+                            ? `/live/${c.id}`
+                            : `/report/${c.id}`
+                        )
+                      }
                     >
-                      {c.status}
-                    </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-[#F4F4F5] truncate">{c.group_name}</p>
+                          <p className="text-xs text-[#A1A1AA] mt-0.5 truncate">{c.message_text}</p>
+                        </div>
+                        <span
+                          className={`flex-shrink-0 text-[10px] px-2 py-0.5 rounded-full font-medium ${CAMPAIGN_STATUS_COLORS[c.status]}`}
+                        >
+                          {c.status}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className="text-xs text-[#71717A]">{c.done_count}/{c.total_parents} done</span>
+                        <span className="text-xs text-[#71717A]">·</span>
+                        <span className="text-xs text-[#71717A]">{formatRelativeTime(c.created_at)}</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => deleteCampaign.mutate(c.id)}
+                      disabled={deleteCampaign.isPending}
+                      className="p-2 text-[#52525B] hover:text-red-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center flex-shrink-0"
+                    >
+                      <Trash2 size={14} />
+                    </button>
                   </div>
-                  <div className="flex items-center gap-3 mt-2">
-                    <span className="text-xs text-[#71717A]">
-                      {c.done_count}/{c.total_parents} done
-                    </span>
-                    <span className="text-xs text-[#71717A]">·</span>
-                    <span className="text-xs text-[#71717A]">{formatRelativeTime(c.created_at)}</span>
-                  </div>
-                </button>
+                </div>
               ))}
             </div>
           )}
