@@ -1,13 +1,14 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Radio, Users, FileText } from "lucide-react";
+import { LayoutDashboard, Radio, Users, Settings } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/compose", label: "New Alert", icon: Radio },
   { href: "/groups", label: "Groups", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export default function BottomNav() {
@@ -23,7 +24,7 @@ export default function BottomNav() {
               key={href}
               href={href}
               className={cn(
-                "flex flex-col items-center gap-1 px-4 py-3 min-h-[56px] flex-1 transition-colors",
+                "flex flex-col items-center gap-1 px-3 py-3 min-h-[56px] flex-1 transition-colors",
                 active ? "text-green-500" : "text-[#A1A1AA] hover:text-[#F4F4F5]"
               )}
             >

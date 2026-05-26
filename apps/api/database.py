@@ -39,3 +39,12 @@ async def create_tables():
     async with engine.begin() as conn:
         from models import Base as ModelBase
         await conn.run_sync(ModelBase.metadata.create_all)
+        from sqlalchemy import text
+        for stmt in [
+            "ALTER TABLE parents ADD COLUMN IF NOT EXISTS opted_out BOOLEAN DEFAULT FALSE",
+            "ALTER TABLE call_campaigns ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP WITH TIME ZONE",
+        ]:
+            try:
+                await conn.execute(text(stmt))
+            except Exception:
+                pass

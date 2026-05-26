@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { CallLog } from "@/types";
 import { STATUS_LABELS, STATUS_COLORS } from "@/types";
 import { cn, formatDuration, formatPhone } from "@/lib/utils";
-import { X } from "lucide-react";
+import { X, MessageCircle } from "lucide-react";
 
 interface CallTableProps {
   logs: CallLog[];
@@ -78,14 +78,27 @@ export default function CallTable({ logs }: CallTableProps) {
                     {formatDuration(log.duration_seconds)}
                   </td>
                   <td className="px-4 py-3">
-                    {log.ai_script && (
-                      <button
-                        onClick={() => setScriptModal(log.ai_script)}
-                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                      >
-                        View
-                      </button>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {log.ai_script && (
+                        <button
+                          onClick={() => setScriptModal(log.ai_script)}
+                          className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
+                        >
+                          View
+                        </button>
+                      )}
+                      {(log.status === "failed" || log.status === "busy") && log.phone_number && (
+                        <a
+                          href={`https://wa.me/${log.phone_number.replace("+", "")}?text=${encodeURIComponent(log.ai_script || "Important message from Seth M R Jaipuria School. Please contact the school.")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title="Send WhatsApp"
+                          className="text-green-500 hover:text-green-400 transition-colors"
+                        >
+                          <MessageCircle size={13} />
+                        </a>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

@@ -21,8 +21,22 @@ class UserOut(BaseModel):
     username: str
     role: str
     created_at: datetime
+    owner_name: Optional[str] = None
+    owner_title: Optional[str] = None
 
     model_config = {"from_attributes": True}
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str = ""
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_new_password(cls, v: str) -> str:
+        if len(v) < 6:
+            raise ValueError("New password must be at least 6 characters")
+        return v
 
 
 # ─── ClassGroup ─────────────────────────────────────────────────────────────
@@ -70,6 +84,7 @@ class ParentUpdate(BaseModel):
     parent_name: Optional[str] = None
     phone_number: Optional[str] = None
     is_active: Optional[bool] = None
+    opted_out: Optional[bool] = None
 
     @field_validator("phone_number", mode="before")
     @classmethod
@@ -89,6 +104,7 @@ class ParentOut(BaseModel):
     parent_name: str
     phone_number: str
     is_active: bool
+    opted_out: bool = False
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -100,6 +116,7 @@ class CampaignCreate(BaseModel):
     class_group_id: str
     message_text: str
     language: str = "hindi"
+    scheduled_at: Optional[datetime] = None
 
     @field_validator("language")
     @classmethod
@@ -143,6 +160,7 @@ class CampaignOut(BaseModel):
     done_count: int
     failed_count: int
     skipped_count: int
+    scheduled_at: Optional[datetime] = None
     started_at: Optional[datetime]
     ended_at: Optional[datetime]
     created_at: datetime

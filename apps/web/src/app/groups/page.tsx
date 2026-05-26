@@ -7,21 +7,37 @@ import CSVImportButton from "@/components/groups/CSVImportButton";
 import api from "@/lib/api";
 import type { ClassGroup, Parent } from "@/types";
 import { cn } from "@/lib/utils";
-import { Plus, ChevronDown, ChevronUp, Trash2, Users, Loader2 } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp, Trash2, Users, Loader2, BellOff, Bell } from "lucide-react";
 
-function ParentItem({ parent, onDelete }: { parent: Parent; onDelete: (id: string) => void }) {
+function ParentItem({ parent, onDelete, onToggleOptOut }: {
+  parent: Parent & { opted_out?: boolean };
+  onDelete: (id: string) => void;
+  onToggleOptOut: (id: string, val: boolean) => void;
+}) {
   return (
-    <div className="flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-[#27272A]/50">
+    <div className={cn("flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-[#27272A]/50", parent.opted_out && "opacity-50")}>
       <div>
-        <p className="text-sm text-[#F4F4F5]">{parent.child_name}</p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-[#F4F4F5]">{parent.child_name}</p>
+          {parent.opted_out && <span className="text-[9px] px-1.5 py-0.5 bg-red-950 text-red-400 rounded-full">DND</span>}
+        </div>
         <p className="text-xs text-[#A1A1AA]">{parent.parent_name} · {parent.phone_number}</p>
       </div>
-      <button
-        onClick={() => onDelete(parent.id)}
-        className="p-2 text-[#71717A] hover:text-red-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-      >
-        <Trash2 size={14} />
-      </button>
+      <div className="flex items-center">
+        <button
+          onClick={() => onToggleOptOut(parent.id, !parent.opted_out)}
+          title={parent.opted_out ? "Enable calls" : "Disable calls (DND)"}
+          className="p-2 text-[#71717A] hover:text-amber-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+        >
+          {parent.opted_out ? <Bell size={13} /> : <BellOff size={13} />}
+        </button>
+        <button
+          onClick={() => onDelete(parent.id)}
+          className="p-2 text-[#71717A] hover:text-red-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+        >
+          <Trash2 size={14} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -43,6 +59,12 @@ function GroupCard({ group }: { group: ClassGroup }) {
       qc.invalidateQueries({ queryKey: ["parents", group.id] });
       qc.invalidateQueries({ queryKey: ["groups"] });
     },
+  });
+
+  const toggleOptOut = useMutation({
+    mutationFn: ({ id, opted_out }: { id: string; opted_out: boolean }) =>
+      api.put(`/parents/${id}`, { opted_out }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["parents", group.id] }),
   });
 
   return (
@@ -93,6 +115,7 @@ function GroupCard({ group }: { group: ClassGroup }) {
                   key={p.id}
                   parent={p}
                   onDelete={(id) => deleteParent.mutate(id)}
+                  onToggleOptOut={(id, val) => toggleOptOut.mutate({ id, opted_out: val })}
                 />
               ))}
             </div>

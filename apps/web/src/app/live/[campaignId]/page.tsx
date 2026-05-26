@@ -38,12 +38,26 @@ export default function LivePage() {
     },
     onDone: () => {
       wakeLockRef.current?.release().catch(() => {});
+      // Browser push notification
+      if ("Notification" in window && Notification.permission === "granted") {
+        new Notification("Bus Alert — Campaign Complete", {
+          body: "All calls have been processed. Tap to view report.",
+          icon: "/icons/icon-192x192.png",
+        });
+      }
       setTimeout(() => {
         clearLiveData();
         router.push(`/report/${campaignId}`);
       }, 1500);
     },
   });
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const handleStop = async () => {
     if (!confirmStop) {

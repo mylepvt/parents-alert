@@ -123,6 +123,16 @@ async def add_parent(
     if not group_result.scalar_one_or_none():
         raise HTTPException(status_code=404, detail="Group not found")
 
+    existing = await db.execute(
+        select(Parent).where(
+            Parent.class_group_id == group_id,
+            Parent.phone_number == body.phone_number,
+            Parent.is_active == True,
+        )
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail=f"Phone {body.phone_number} already exists in this group")
+
     parent = Parent(
         class_group_id=group_id,
         child_name=body.child_name,

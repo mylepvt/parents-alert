@@ -9,7 +9,7 @@ import api from "@/lib/api";
 import type { ClassGroup } from "@/types";
 import { cn } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Users, Phone, X, Clock } from "lucide-react";
+import { Loader2, Users, Phone, X, Clock, CalendarClock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -33,6 +33,8 @@ export default function ComposePage() {
   const [message, setMessage] = useState("");
   const [isLaunching, setIsLaunching] = useState(false);
   const [launchError, setLaunchError] = useState("");
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledAt, setScheduledAt] = useState("");
   const createCampaign = useCreateCampaign();
 
   const qc = useQueryClient();
@@ -66,7 +68,8 @@ export default function ComposePage() {
         class_group_id: selectedGroup.id,
         message_text: message.trim(),
         language,
-      });
+        scheduled_at: scheduleEnabled && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
+      } as Parameters<typeof createCampaign.mutateAsync>[0]);
       router.push(`/live/${campaign.id}`);
     } catch {
       setLaunchError("Failed to start campaign. Try again.");
@@ -209,16 +212,41 @@ export default function ComposePage() {
                   language={language}
                   hint={selectedGroup ? `${selectedGroup.parent_count} parents will receive AI voice call in ${language}` : undefined}
                 />
+
+                {/* Schedule toggle */}
+                <div className="p-3 bg-[#18181B] border border-[#27272A] rounded-xl space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setScheduleEnabled(!scheduleEnabled)}
+                    className="flex items-center gap-2 w-full text-left"
+                  >
+                    <CalendarClock size={14} className={scheduleEnabled ? "text-green-400" : "text-[#71717A]"} />
+                    <span className="text-xs text-[#A1A1AA] flex-1">Schedule for later</span>
+                    <span className={cn("text-[10px] px-2 py-0.5 rounded-full", scheduleEnabled ? "bg-green-900 text-green-400" : "bg-[#27272A] text-[#71717A]")}>
+                      {scheduleEnabled ? "ON" : "OFF"}
+                    </span>
+                  </button>
+                  {scheduleEnabled && (
+                    <input
+                      type="datetime-local"
+                      value={scheduledAt}
+                      onChange={(e) => setScheduledAt(e.target.value)}
+                      min={new Date().toISOString().slice(0, 16)}
+                      className="w-full px-3 py-2 bg-[#09090B] border border-[#27272A] rounded-lg text-sm text-[#F4F4F5] focus:outline-none focus:border-[#52525B]"
+                    />
+                  )}
+                </div>
+
                 {launchError && <p className="text-xs text-red-400">{launchError}</p>}
                 <div className="flex gap-3">
                   <button onClick={() => setStep(2)} className="flex-1 py-3 border border-[#27272A] rounded-xl text-sm text-[#A1A1AA] min-h-[48px]">Back</button>
                   <button
                     onClick={handleGroupLaunch}
-                    disabled={!message.trim() || createCampaign.isPending}
+                    disabled={!message.trim() || createCampaign.isPending || (scheduleEnabled && !scheduledAt)}
                     className="flex-1 py-3 bg-green-600 hover:bg-green-500 disabled:opacity-60 rounded-xl text-sm font-semibold text-white min-h-[48px] flex items-center justify-center gap-2 transition-colors"
                   >
                     {createCampaign.isPending && <Loader2 size={14} className="animate-spin" />}
-                    🚀 Launch Calls ({selectedGroup?.parent_count ?? 0})
+                    {scheduleEnabled ? "📅 Schedule" : "🚀 Launch"} ({selectedGroup?.parent_count ?? 0})
                   </button>
                 </div>
               </div>

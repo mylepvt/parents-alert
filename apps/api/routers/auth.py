@@ -1,13 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.security import HTTPBearer
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from auth import authenticate_user, create_access_token, get_current_user
+from auth import authenticate_user, create_access_token, get_current_user, hash_password, verify_password
+from config import settings
 from database import get_db
 from models import User
-from schemas import ErrorResponse, LoginRequest, TokenResponse, UserOut
+from schemas import ChangePasswordRequest, ErrorResponse, LoginRequest, TokenResponse, UserOut
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 limiter = Limiter(key_func=get_remote_address)
@@ -36,4 +36,24 @@ async def logout():
 
 @router.get("/me", response_model=UserOut)
 async def me(current_user: User = Depends(get_current_user)):
-    return current_user
+    return UserOut(
+        id=current_user.id,
+        username=current_user.username,
+        role=current_user.role.value,
+        created_at=current_user.created_at,
+        owner_name=settings.owner_name,
+        owner_title=settings.owner_title,
+    )
+
+
+@router.post("/change-password")
+async def change_password(
+    body: ChangePasswordRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect")
+    current_user.hashed_password = hash_password(body.new_password)
+    await db.commit()
+    return {"message": "Password changed successfully"}

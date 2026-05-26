@@ -18,6 +18,13 @@ export default function DashboardPage() {
   const qc = useQueryClient();
   const { data: campaigns, isLoading: campaignsLoading } = useCampaigns();
 
+  // Keep Render awake
+  useEffect(() => {
+    const ping = () => api.get("/health").catch(() => {});
+    const id = setInterval(ping, 8 * 60 * 1000); // every 8 min
+    return () => clearInterval(id);
+  }, []);
+
   const deleteCampaign = useMutation({
     mutationFn: (id: string) => api.delete(`/campaigns/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["campaigns"] }),
@@ -40,8 +47,9 @@ export default function DashboardPage() {
     <AppShell title="Bus Alert">
       <div className="px-4 pt-5 pb-4 space-y-5">
         <div>
-          <h2 className="text-xl font-bold text-[#F4F4F5]">
-            {getGreeting()}, {user?.username}
+          <p className="text-xs text-[#71717A]">Transport Manager · Seth M R Jaipuria School</p>
+          <h2 className="text-xl font-bold text-[#F4F4F5] mt-0.5">
+            {getGreeting()}, Shikha Chaudhary
           </h2>
           <p className="text-sm text-[#A1A1AA] mt-0.5">
             {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}

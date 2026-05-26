@@ -54,6 +54,7 @@ def _campaign_out(campaign: CallCampaign, group_name: str = None) -> CampaignOut
         done_count=campaign.done_count,
         failed_count=campaign.failed_count,
         skipped_count=campaign.skipped_count,
+        scheduled_at=getattr(campaign, "scheduled_at", None),
         started_at=campaign.started_at,
         ended_at=campaign.ended_at,
         created_at=campaign.created_at,
@@ -114,6 +115,7 @@ async def create_campaign(
         message_text=body.message_text,
         language=body.language,
         total_parents=parent_count,
+        scheduled_at=body.scheduled_at,
     )
     db.add(campaign)
     await db.commit()

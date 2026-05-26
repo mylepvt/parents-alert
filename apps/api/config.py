@@ -28,6 +28,9 @@ class Settings(BaseSettings):
 
     frontend_url: str = ""  # e.g. https://bus-alert-web.onrender.com
 
+    owner_name: str = "Shikha Chaudhary"
+    owner_title: str = "Transport Manager"
+
     school_name: str = "Seth M R Jaipuria School Bhiwadi"
     school_phone: str = "+91XXXXXXXXXX"
 

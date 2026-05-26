@@ -23,10 +23,20 @@ async def run_campaign_local(campaign_id: str) -> None:
             logger.error("Campaign %s not found", campaign_id)
             return
 
+        # Wait if scheduled for future
+        scheduled_at = getattr(campaign, "scheduled_at", None)
+        if scheduled_at:
+            now = datetime.now(timezone.utc)
+            delay = (scheduled_at - now).total_seconds()
+            if delay > 0:
+                logger.info("Campaign %s scheduled in %.0fs", campaign_id, delay)
+                await asyncio.sleep(delay)
+
         parents_result = await db.execute(
             select(Parent).where(
                 Parent.class_group_id == campaign.class_group_id,
                 Parent.is_active == True,
+                Parent.opted_out == False,
             )
         )
         parents = parents_result.scalars().all()
