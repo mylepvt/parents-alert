@@ -9,6 +9,7 @@ import type { ClassGroup, Campaign } from "@/types";
 import { formatRelativeTime, getGreeting } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Radio, Users, TrendingUp, Trash2 } from "lucide-react";
 
