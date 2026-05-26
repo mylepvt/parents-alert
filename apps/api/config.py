@@ -26,6 +26,8 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
 
+    frontend_url: str = ""  # e.g. https://bus-alert-web.onrender.com
+
     school_name: str = "Seth M R Jaipuria School Bhiwadi"
     school_phone: str = "+91XXXXXXXXXX"
 
