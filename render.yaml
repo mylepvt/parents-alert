@@ -1,0 +1,64 @@
+services:
+  # ── FastAPI Backend ──────────────────────────────────────────────
+  - type: web
+    name: bus-alert-api
+    runtime: python
+    rootDir: apps/api
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.0
+      - key: ENVIRONMENT
+        value: production
+      - key: LOCAL_MODE
+        value: true
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bus-alert-db
+          property: connectionString
+      - key: BASE_URL
+        sync: false          # fill after deploy: your render API URL
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_PHONE_NUMBER
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: SCHOOL_NAME
+        value: Seth M R Jaipuria School Bhiwadi
+      - key: SCHOOL_PHONE
+        sync: false
+      - key: MAX_RETRY_ATTEMPTS
+        value: 5
+      - key: RETRY_DELAY_SECONDS
+        value: 30
+      - key: REDIS_URL
+        value: redis://localhost:6379/0   # unused in LOCAL_MODE
+
+  # ── Next.js Frontend ─────────────────────────────────────────────
+  - type: web
+    name: bus-alert-web
+    runtime: node
+    rootDir: apps/web
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_VERSION
+        value: 22.0.0
+      - key: NEXT_PUBLIC_API_URL
+        sync: false          # fill: your render API URL e.g. https://bus-alert-api.onrender.com
+      - key: NEXT_PUBLIC_APP_NAME
+        value: Bus Alert
+
+databases:
+  - name: bus-alert-db
+    plan: free
+    databaseName: busalert
+    user: busalert

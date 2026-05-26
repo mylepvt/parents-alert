@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Offline — Bus Alert</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #09090B;
+      color: #F4F4F5;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      text-align: center;
+    }
+    .icon { font-size: 64px; margin-bottom: 24px; }
+    h1 { font-size: 24px; font-weight: 700; margin-bottom: 12px; }
+    p { color: #A1A1AA; font-size: 16px; line-height: 1.6; max-width: 320px; }
+    button {
+      margin-top: 32px;
+      background: #22C55E;
+      color: #09090B;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      min-height: 48px;
+    }
+  </style>
+</head>
+<body>
+  <div class="icon">🚌</div>
+  <h1>You're Offline</h1>
+  <p>No internet connection. Previously loaded reports are still available.</p>
+  <button onclick="window.location.reload()">Try Again</button>
+</body>
+</html>
