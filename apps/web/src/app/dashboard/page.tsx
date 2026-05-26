@@ -50,16 +50,24 @@ export default function DashboardPage() {
 
         <div className="grid grid-cols-2 gap-3">
           {[
-            { label: "Groups", value: groups?.length ?? 0, icon: Users, color: "text-blue-400" },
-            { label: "Parents", value: totalParents, icon: Users, color: "text-purple-400" },
-            { label: "Calls Today", value: todayTotal, icon: Radio, color: "text-amber-400" },
-            { label: "Success Rate", value: `${successRate}%`, icon: TrendingUp, color: "text-green-500" },
-          ].map(({ label, value, icon: Icon, color }) => (
-            <div key={label} className="bg-[#18181B] rounded-xl p-4 border border-[#27272A]">
-              <Icon size={18} className={color} />
-              <p className="text-xl font-bold text-[#F4F4F5] mt-2">{value}</p>
-              <p className="text-xs text-[#A1A1AA] mt-0.5">{label}</p>
-            </div>
+            { label: "Groups", value: groups?.length ?? 0, icon: Users, color: "text-blue-400", href: "/groups" },
+            { label: "Parents", value: totalParents, icon: Users, color: "text-purple-400", href: "/groups" },
+            { label: "Calls Today", value: todayTotal, icon: Radio, color: "text-amber-400", href: null },
+            { label: "Success Rate", value: `${successRate}%`, icon: TrendingUp, color: "text-green-500", href: null },
+          ].map(({ label, value, icon: Icon, color, href }) => (
+            href ? (
+              <Link key={label} href={href} className="bg-[#18181B] rounded-xl p-4 border border-[#27272A] hover:border-[#52525B] transition-colors active:scale-95">
+                <Icon size={18} className={color} />
+                <p className="text-xl font-bold text-[#F4F4F5] mt-2">{value}</p>
+                <p className="text-xs text-[#A1A1AA] mt-0.5">{label}</p>
+              </Link>
+            ) : (
+              <div key={label} className="bg-[#18181B] rounded-xl p-4 border border-[#27272A]">
+                <Icon size={18} className={color} />
+                <p className="text-xl font-bold text-[#F4F4F5] mt-2">{value}</p>
+                <p className="text-xs text-[#A1A1AA] mt-0.5">{label}</p>
+              </div>
+            )
           ))}
         </div>
 
