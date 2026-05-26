@@ -9,6 +9,38 @@ from schemas import CampaignCreate, CampaignOut, QuickCallCreate
 
 router = APIRouter(tags=["campaigns"])
 
+QUICK_GROUP_NAME = "__quick_calls__"
+
+
+@router.get("/contacts/quick", response_model=list)
+async def list_quick_contacts(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return all contacts from the quick-calls group, newest first."""
+    group_result = await db.execute(
+        select(ClassGroup).where(ClassGroup.name == QUICK_GROUP_NAME)
+    )
+    group = group_result.scalar_one_or_none()
+    if not group:
+        return []
+    result = await db.execute(
+        select(Parent)
+        .where(Parent.class_group_id == group.id, Parent.is_active == True)
+        .order_by(Parent.created_at.desc())
+        .limit(20)
+    )
+    parents = result.scalars().all()
+    return [
+        {
+            "id": p.id,
+            "phone_number": p.phone_number,
+            "parent_name": p.parent_name,
+            "child_name": p.child_name,
+        }
+        for p in parents
+    ]
+
 
 def _campaign_out(campaign: CallCampaign, group_name: str = None) -> CampaignOut:
     return CampaignOut(

@@ -8,7 +8,8 @@ import { useCreateCampaign } from "@/hooks/useCampaign";
 import api from "@/lib/api";
 import type { ClassGroup } from "@/types";
 import { cn } from "@/lib/utils";
-import { Loader2, Users, Phone } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Loader2, Users, Phone, X, Clock } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,9 +35,23 @@ export default function ComposePage() {
   const [launchError, setLaunchError] = useState("");
   const createCampaign = useCreateCampaign();
 
+  const qc = useQueryClient();
+
   const { data: groups, isLoading } = useQuery<ClassGroup[]>({
     queryKey: ["groups"],
     queryFn: async () => (await api.get("/groups")).data,
+  });
+
+  type QuickContact = { id: string; phone_number: string; parent_name: string; child_name: string };
+  const { data: recentContacts } = useQuery<QuickContact[]>({
+    queryKey: ["quick-contacts"],
+    queryFn: async () => (await api.get("/contacts/quick")).data,
+    enabled: mode === "quick",
+  });
+
+  const deleteContact = useMutation({
+    mutationFn: (id: string) => api.delete(`/parents/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["quick-contacts"] }),
   });
 
   const quickForm = useForm<QuickForm>({
@@ -223,6 +238,43 @@ export default function ComposePage() {
                   <h2 className="text-lg font-bold text-[#F4F4F5]">Enter Number</h2>
                   <p className="text-sm text-[#A1A1AA] mt-0.5">Call a single parent directly</p>
                 </div>
+
+                {/* Recent contacts */}
+                {recentContacts && recentContacts.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-[#71717A] flex items-center gap-1.5">
+                      <Clock size={11} /> Recent
+                    </p>
+                    {recentContacts.map((c) => (
+                      <div
+                        key={c.id}
+                        className="flex items-center justify-between px-3 py-2.5 bg-[#18181B] border border-[#27272A] rounded-xl"
+                      >
+                        <button
+                          type="button"
+                          className="flex-1 text-left"
+                          onClick={() => {
+                            quickForm.setValue("phone_number", c.phone_number);
+                            quickForm.setValue("parent_name", c.parent_name);
+                            quickForm.setValue("child_name", c.child_name);
+                          }}
+                        >
+                          <p className="text-sm text-[#F4F4F5]">{c.parent_name} · {c.child_name}</p>
+                          <p className="text-xs text-[#71717A]">{c.phone_number}</p>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteContact.mutate(c.id)}
+                          disabled={deleteContact.isPending}
+                          className="p-2 text-[#52525B] hover:text-red-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="space-y-3">
                   {([
                     { field: "phone_number" as const, label: "Phone Number", placeholder: "+919876543210" },
