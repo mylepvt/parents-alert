@@ -7,13 +7,60 @@ import CSVImportButton from "@/components/groups/CSVImportButton";
 import api from "@/lib/api";
 import type { ClassGroup, Parent } from "@/types";
 import { cn } from "@/lib/utils";
-import { Plus, ChevronDown, ChevronUp, Trash2, Users, Loader2, BellOff, Bell } from "lucide-react";
+import { Plus, ChevronDown, ChevronUp, Trash2, Users, Loader2, BellOff, Bell, Pencil, Check, X } from "lucide-react";
 
-function ParentItem({ parent, onDelete, onToggleOptOut }: {
+function ParentItem({ parent, onDelete, onToggleOptOut, onUpdate }: {
   parent: Parent & { opted_out?: boolean };
   onDelete: (id: string) => void;
   onToggleOptOut: (id: string, val: boolean) => void;
+  onUpdate: (id: string, data: { child_name: string; parent_name: string; phone_number: string }) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [form, setForm] = useState({ child_name: parent.child_name, parent_name: parent.parent_name, phone_number: parent.phone_number });
+
+  const handleDeleteClick = () => {
+    if (!confirmDelete) {
+      setConfirmDelete(true);
+      setTimeout(() => setConfirmDelete(false), 3000);
+    } else {
+      onDelete(parent.id);
+    }
+  };
+
+  const handleSave = () => {
+    onUpdate(parent.id, form);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <div className="py-2.5 px-3 rounded-lg bg-[#27272A]/30 space-y-2">
+        {[
+          { key: "child_name", placeholder: "Child name" },
+          { key: "parent_name", placeholder: "Parent name" },
+          { key: "phone_number", placeholder: "+91XXXXXXXXXX" },
+        ].map(({ key, placeholder }) => (
+          <input
+            key={key}
+            value={form[key as keyof typeof form]}
+            onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+            placeholder={placeholder}
+            className="w-full px-2.5 py-1.5 bg-[#09090B] border border-[#3F3F46] rounded-lg text-xs text-[#F4F4F5] placeholder-[#52525B] focus:outline-none focus:border-[#52525B]"
+          />
+        ))}
+        <div className="flex gap-2">
+          <button onClick={handleSave} className="flex items-center gap-1 px-3 py-1.5 bg-green-700 rounded-lg text-xs text-white min-h-[32px]">
+            <Check size={11} /> Save
+          </button>
+          <button onClick={() => setEditing(false)} className="flex items-center gap-1 px-3 py-1.5 border border-[#3F3F46] rounded-lg text-xs text-[#A1A1AA] min-h-[32px]">
+            <X size={11} /> Cancel
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("flex items-center justify-between py-2.5 px-3 rounded-lg hover:bg-[#27272A]/50", parent.opted_out && "opacity-50")}>
       <div>
@@ -25,6 +72,13 @@ function ParentItem({ parent, onDelete, onToggleOptOut }: {
       </div>
       <div className="flex items-center">
         <button
+          onClick={() => setEditing(true)}
+          title="Edit"
+          className="p-2 text-[#71717A] hover:text-blue-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+        >
+          <Pencil size={12} />
+        </button>
+        <button
           onClick={() => onToggleOptOut(parent.id, !parent.opted_out)}
           title={parent.opted_out ? "Enable calls" : "Disable calls (DND)"}
           className="p-2 text-[#71717A] hover:text-amber-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
@@ -32,10 +86,10 @@ function ParentItem({ parent, onDelete, onToggleOptOut }: {
           {parent.opted_out ? <Bell size={13} /> : <BellOff size={13} />}
         </button>
         <button
-          onClick={() => onDelete(parent.id)}
-          className="p-2 text-[#71717A] hover:text-red-400 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+          onClick={handleDeleteClick}
+          className={cn("p-2 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center text-xs", confirmDelete ? "text-red-400 font-semibold" : "text-[#71717A] hover:text-red-400")}
         >
-          <Trash2 size={14} />
+          {confirmDelete ? "Sure?" : <Trash2 size={14} />}
         </button>
       </div>
     </div>
@@ -64,6 +118,12 @@ function GroupCard({ group }: { group: ClassGroup }) {
   const toggleOptOut = useMutation({
     mutationFn: ({ id, opted_out }: { id: string; opted_out: boolean }) =>
       api.put(`/parents/${id}`, { opted_out }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["parents", group.id] }),
+  });
+
+  const updateParent = useMutation({
+    mutationFn: ({ id, data }: { id: string; data: { child_name: string; parent_name: string; phone_number: string } }) =>
+      api.put(`/parents/${id}`, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["parents", group.id] }),
   });
 
@@ -116,6 +176,7 @@ function GroupCard({ group }: { group: ClassGroup }) {
                   parent={p}
                   onDelete={(id) => deleteParent.mutate(id)}
                   onToggleOptOut={(id, val) => toggleOptOut.mutate({ id, opted_out: val })}
+                  onUpdate={(id, data) => updateParent.mutate({ id, data })}
                 />
               ))}
             </div>

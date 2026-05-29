@@ -6,6 +6,8 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  _hasHydrated: boolean;
+  setHasHydrated: (val: boolean) => void;
   setAuth: (user: User, token: string) => void;
   clearAuth: () => void;
 }
@@ -16,6 +18,8 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      _hasHydrated: false,
+      setHasHydrated: (val) => set({ _hasHydrated: val }),
       setAuth: (user, token) => {
         if (typeof window !== "undefined") {
           localStorage.setItem("access_token", token);
@@ -32,6 +36,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "bus-alert-auth",
       partialize: (state) => ({ user: state.user, token: state.token, isAuthenticated: state.isAuthenticated }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
     }
   )
 );

@@ -1,9 +1,10 @@
 "use client";
 import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import AppShell from "@/components/layout/AppShell";
 import { useAuthStore } from "@/stores/authStore";
 import api from "@/lib/api";
-import { Loader2, Lock, LogOut, User } from "lucide-react";
+import { Loader2, Lock, LogOut, User, Download, Database, RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function SettingsPage() {
@@ -15,6 +16,17 @@ export default function SettingsPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ type: "ok" | "err"; text: string } | null>(null);
+  const qc = useQueryClient();
+
+  const { data: backups } = useQuery<{ id: string; trigger: string; size_bytes: number; created_at: string }[]>({
+    queryKey: ["backups"],
+    queryFn: async () => (await api.get("/admin/backups")).data,
+  });
+
+  const triggerBackup = useMutation({
+    mutationFn: () => api.post("/admin/backups"),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["backups"] }),
+  });
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,6 +58,22 @@ export default function SettingsPage() {
   const handleLogout = () => {
     clearAuth();
     router.push("/login");
+  };
+
+  const downloadBackup = async (id: string, createdAt: string) => {
+    try {
+      const res = await api.get(`/admin/backups/${id}/download`, { responseType: "blob" });
+      const ts = new Date(createdAt).toISOString().replace(/[:.]/g, "-").slice(0, 19);
+      const filename = `busalert_backup_${ts}.sql`;
+      const url = URL.createObjectURL(new Blob([res.data], { type: "application/sql" }));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Download failed. Try again.");
+    }
   };
 
   return (
@@ -104,6 +132,52 @@ export default function SettingsPage() {
               Update Password
             </button>
           </form>
+        </div>
+
+        {/* Database Backup */}
+        <div className="bg-[#18181B] border border-[#27272A] rounded-xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Database size={15} className="text-[#71717A]" />
+              <p className="text-sm font-semibold text-[#F4F4F5]">Database Backup</p>
+            </div>
+            <button
+              onClick={() => triggerBackup.mutate()}
+              disabled={triggerBackup.isPending}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-[#3F3F46] hover:border-[#52525B] text-[#A1A1AA] hover:text-[#F4F4F5] disabled:opacity-60 rounded-lg text-xs font-medium transition-colors"
+            >
+              {triggerBackup.isPending ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
+              Backup Now
+            </button>
+          </div>
+
+          <p className="text-xs text-[#71717A]">Auto-backs up every 24h. Last 7 stored. Click to download any.</p>
+
+          <div className="space-y-1.5">
+            {!backups?.length ? (
+              <p className="text-xs text-[#52525B] text-center py-3">No backups yet — auto runs on next cycle.</p>
+            ) : (
+              backups.map((b) => (
+                <div key={b.id} className="flex items-center justify-between py-2 px-3 bg-[#09090B] rounded-lg">
+                  <div>
+                    <p className="text-xs text-[#F4F4F5]">
+                      {new Date(b.created_at).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                    <p className="text-[10px] text-[#71717A]">
+                      {b.trigger === "auto" ? "Auto" : "Manual"} · {(b.size_bytes / 1024).toFixed(0)} KB
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => downloadBackup(b.id, b.created_at)}
+                    className="p-2 text-[#52525B] hover:text-blue-400 transition-colors"
+                    title="Download"
+                  >
+                    <Download size={13} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         {/* App Info */}

@@ -15,7 +15,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 export default function LoginPage() {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   const router = useRouter();
   const [showPwd, setShowPwd] = useState(false);
   const login = useLogin();
@@ -25,8 +25,9 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
+    if (!_hasHydrated) return;
     if (isAuthenticated) router.push("/dashboard");
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, _hasHydrated, router]);
 
   return (
     <div className="min-h-screen bg-[#09090B] flex flex-col items-center justify-center px-4">

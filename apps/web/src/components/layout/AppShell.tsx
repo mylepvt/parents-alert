@@ -14,15 +14,16 @@ interface AppShellProps {
 }
 
 export default function AppShell({ children, title, showBack, onBack, hideNav }: AppShellProps) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, _hasHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push("/login");
-    }
-  }, [isAuthenticated, router]);
+    if (!_hasHydrated) return;
+    if (!isAuthenticated) router.push("/login");
+  }, [isAuthenticated, _hasHydrated, router]);
 
+  // Still hydrating from localStorage — show nothing to prevent flicker
+  if (!_hasHydrated) return null;
   if (!isAuthenticated) return null;
 
   return (

@@ -114,6 +114,16 @@ class CallCampaign(Base):
     call_logs: Mapped[list["CallLog"]] = relationship("CallLog", back_populates="campaign", cascade="all, delete-orphan")
 
 
+class DbBackup(Base):
+    __tablename__ = "db_backups"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
+    trigger: Mapped[str] = mapped_column(String(10), default="auto")  # "auto" | "manual"
+    size_bytes: Mapped[int] = mapped_column(Integer, default=0)
+    sql_content: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class CallLog(Base):
     __tablename__ = "call_logs"
 

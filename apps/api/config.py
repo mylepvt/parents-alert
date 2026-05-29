@@ -18,8 +18,6 @@ class Settings(BaseSettings):
         elif url.startswith("postgresql://") and "+asyncpg" not in url:
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         return url
-    redis_url: str = "redis://localhost:6379/0"
-
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
     twilio_phone_number: str = ""
@@ -46,6 +44,10 @@ class Settings(BaseSettings):
     exotel_api_key: str = ""
     exotel_api_token: str = ""
     exotel_phone_number: str = ""  # ExoPhone e.g. 09XXXXXXXXX
+
+    sentry_dsn: str = ""  # Set to enable error monitoring
+
+    sentry_dsn: str = ""  # Set to enable error monitoring
 
     local_mode: bool = False  # True = no Twilio, no Redis, no Anthropic needed
 

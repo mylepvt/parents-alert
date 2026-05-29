@@ -42,4 +42,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-module.exports = withPWA(nextConfig);
+// Only wrap with Sentry if DSN is configured — avoids build errors when not set up
+const hasSentry = Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
+
+if (hasSentry) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { withSentryConfig } = require("@sentry/nextjs");
+  module.exports = withSentryConfig(withPWA(nextConfig), {
+    silent: true,
+    disableLogger: true,
+    automaticVercelMonitors: false,
+  });
+} else {
+  module.exports = withPWA(nextConfig);
+}

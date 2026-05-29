@@ -1,6 +1,10 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
+import sentry_sdk
+from sentry_sdk.integrations.fastapi import FastApiIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -12,9 +16,20 @@ from slowapi.util import get_remote_address
 from config import settings
 from database import create_tables
 from routers import auth, campaigns, calls, groups, reports, sse, webhooks
+from routers import backup as backup_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+if settings.sentry_dsn:
+    sentry_sdk.init(
+        dsn=settings.sentry_dsn,
+        integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+        traces_sample_rate=0.1,
+        environment=settings.environment,
+        send_default_pii=False,
+    )
+    logger.info("Sentry initialized")
 
 limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
 
@@ -24,7 +39,10 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Bus Alert API...")
     await create_tables()
     logger.info("Database tables ready")
+    from services.auto_backup import backup_scheduler
+    task = asyncio.create_task(backup_scheduler())
     yield
+    task.cancel()
     logger.info("Shutting down Bus Alert API")
 
 
@@ -58,6 +76,7 @@ app.include_router(calls.router)
 app.include_router(webhooks.router)
 app.include_router(reports.router)
 app.include_router(sse.router)
+app.include_router(backup_router.router)
 
 
 @app.exception_handler(404)

@@ -43,6 +43,13 @@ async def create_tables():
         for stmt in [
             "ALTER TABLE parents ADD COLUMN IF NOT EXISTS opted_out BOOLEAN DEFAULT FALSE",
             "ALTER TABLE call_campaigns ADD COLUMN IF NOT EXISTS scheduled_at TIMESTAMP WITH TIME ZONE",
+            """CREATE TABLE IF NOT EXISTS db_backups (
+                id VARCHAR(36) PRIMARY KEY,
+                trigger VARCHAR(10) DEFAULT 'auto',
+                size_bytes INTEGER DEFAULT 0,
+                sql_content TEXT NOT NULL,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )""",
         ]:
             try:
                 await conn.execute(text(stmt))

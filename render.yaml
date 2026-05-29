@@ -48,8 +48,8 @@ services:
         value: 5
       - key: RETRY_DELAY_SECONDS
         value: 30
-      - key: REDIS_URL
-        value: redis://localhost:6379/0   # unused in LOCAL_MODE
+      - key: SENTRY_DSN
+        sync: false          # fill after setting up Sentry project
 
   # ── Next.js Frontend ─────────────────────────────────────────────
   - type: web
@@ -66,6 +66,8 @@ services:
         sync: false          # fill: your render API URL e.g. https://bus-alert-api.onrender.com
       - key: NEXT_PUBLIC_APP_NAME
         value: Bus Alert
+      - key: NEXT_PUBLIC_SENTRY_DSN
+        sync: false          # fill after setting up Sentry project
 
 databases:
   - name: bus-alert-db

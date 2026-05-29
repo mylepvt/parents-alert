@@ -9,7 +9,7 @@ import type { ClassGroup, Campaign } from "@/types";
 import { formatRelativeTime, getGreeting } from "@/lib/utils";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Radio, Users, TrendingUp, Trash2 } from "lucide-react";
 
@@ -17,6 +17,7 @@ export default function DashboardPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const qc = useQueryClient();
+  const [showAll, setShowAll] = useState(false);
   const { data: campaigns, isLoading: campaignsLoading } = useCampaigns();
 
   // Keep Render awake
@@ -101,7 +102,7 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {campaigns.slice(0, 10).map((c: Campaign) => (
+              {(showAll ? campaigns : campaigns.slice(0, 10)).map((c: Campaign) => (
                 <div
                   key={c.id}
                   className="bg-[#18181B] rounded-xl border border-[#27272A] p-4 hover:border-[#52525B] transition-colors"
@@ -144,6 +145,14 @@ export default function DashboardPage() {
                   </div>
                 </div>
               ))}
+              {campaigns.length > 10 && (
+                <button
+                  onClick={() => setShowAll(!showAll)}
+                  className="w-full py-2.5 text-xs text-[#71717A] hover:text-[#A1A1AA] transition-colors"
+                >
+                  {showAll ? "Show less" : `Show ${campaigns.length - 10} more`}
+                </button>
+              )}
             </div>
           )}
         </div>
