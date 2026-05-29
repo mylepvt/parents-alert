@@ -79,7 +79,10 @@ async def _process_one(call_log_id: str) -> None:
 
     try:
         async with AsyncSessionLocal() as db:
-            if provider == "exotel":
+            if provider == "bolna":
+                from services.bolna_caller import initiate_call
+                await initiate_call(call_log_id, db)
+            elif provider == "exotel":
                 from services.exotel_caller import initiate_call
                 await initiate_call(call_log_id, db)
             elif provider == "twilio":

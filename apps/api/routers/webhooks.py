@@ -12,6 +12,7 @@ from database import get_db
 from models import CallLog
 from services.twilio_caller import handle_status_callback
 from services.exotel_caller import handle_exotel_status_callback
+from services.bolna_caller import handle_bolna_status_callback
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
 logger = logging.getLogger(__name__)
@@ -132,3 +133,38 @@ async def exotel_status_callback(
         db=db,
     )
     return Response(status_code=204)
+
+
+@router.post("/bolna-status")
+async def bolna_status_callback(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Bolna webhook — configure this URL on the Bolna agent dashboard.
+    URL: https://YOUR-API.onrender.com/webhooks/bolna-status
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        return Response(status_code=400)
+
+    # Extract call_log_id from user_data (we pass it when initiating the call)
+    user_data = body.get("user_data") or {}
+    call_log_id = user_data.get("call_log_id") or body.get("call_log_id")
+    if not call_log_id:
+        logger.warning("Bolna webhook missing call_log_id: %s", body)
+        return Response(status_code=200)  # 200 so Bolna doesn't retry
+
+    call_status = body.get("status") or body.get("call_status") or ""
+    duration = str(body.get("duration") or body.get("call_duration") or 0)
+
+    logger.info("Bolna webhook: call_log=%s status=%s duration=%s", call_log_id, call_status, duration)
+
+    await handle_bolna_status_callback(
+        call_log_id=call_log_id,
+        call_status=call_status,
+        call_duration=duration,
+        db=db,
+    )
+    return Response(status_code=200)

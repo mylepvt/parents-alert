@@ -45,7 +45,10 @@ class Settings(BaseSettings):
     exotel_api_token: str = ""
     exotel_phone_number: str = ""  # ExoPhone e.g. 09XXXXXXXXX
 
-    sentry_dsn: str = ""  # Set to enable error monitoring
+    # Bolna AI (Indian AI voice agent)
+    bolna_api_key: str = ""
+    bolna_agent_id: str = ""
+    bolna_phone_number: str = ""  # from_phone_number registered on Bolna
 
     sentry_dsn: str = ""  # Set to enable error monitoring
 
